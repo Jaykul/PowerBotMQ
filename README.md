@@ -1,38 +1,12 @@
 PowerBot
 ========
 
-An IRC bot in PowerShell (using SmartIrc4net)
+An chat bot for PowerShell using ZeroMQ, or rather ... a bridge bot with the possibility of adding triggers like Hubot's.
 
-The main bot functionality is the PowerBot.psm1 module and the UpdateCommands.ps1 script which loads hooks and commands.
-Through the psd1 configuration, PowerBot allows you to expose any PowerShell commands you want to IRC users by adding them to the module manifest in the PrivateData.RolePermissions.Users array.
+There are currently two protocol adapters (IRC and Slack), both written in PowerShell against .Net assemblies.  Technically these can be written in any language where there's a ZeroMQ library!
 
-To install, use the [PoshCode](/PoshCode/PoshCode) module:
+It's a bit of a mess, but for now I've pushed a lib folder full of stuff that should be NuGet packages: NetMQ, SlackAPI, and SmartIrc4net, plus their dependencies: Newtonsoft.Json, ServiceStack, Log4Net, WebSocket4Net, etc.
 
-    Install-Module PowerBot
+Still to come: the a binary project (PowerBot.csproj), plus my fork of @inumedia's SlackAPI, and @meebey's SmartIrc4Net .. and the build scripts and all that jazz. Also, I intend to figure out a way to use Hubot and/or Mmmbot adapters ...
 
-I've included a few commands here in the BotCommands module, but in my bot (which I host in Azure) I also use a bunch of other modules. Here are some suggested additions:
-
-    'SQLitePSProvider', 'Strings', 'Bing', 'Math', 'WebQueries', 'FAQ', 'Credit' | % { Install-Module $_ }
-
-You can add this to the RolePermissions.Users hashtable:
-
-
-"Bing"="*"
-"Math"="*"
-"WebQueries"="*"
-"Strings"= "Join-String", "Split-String", "Replace-String", "Format-Csv"
-
-"FAQ"="*"
-"CreditTracking"="*"
-
-
-I should note that FAQ and CreditTracking, as well as the new "UserTracking" module require a "data:" drive with filter support 
-such as the one provided by Jim Christopher's SqlLite module, which I packaged on Chocolatey for the PoshCode module:
-
-   Install-Module SQLitePSProvider
-
-In order to get them to import correctly, I had to write these modules with an ```Import-Module``` statement at the top, rather than a properly documented dependency on the module.
-This is unfortunate because the "SQLitePSProvider" module name is my packaging of Jim's module, and so if he ever packages his, I'll probaly have to update all these to depend on that. 
-
-NOTE that if you do NOT want to use the SQLitePSProvider, you need some other way of providing a data drive with compatible syntax.
-Otherwise, you can simply not use those three modules, and everything should work fine (except that you won't have role-based access control).
+If you want to write automation scripts against it, have a look at the "TheBrain.psm1" adapter. You don't have to add triggers to that (although you can) -- you could just implement your own "adapter" that talks back like TheBrain does. :wink:
