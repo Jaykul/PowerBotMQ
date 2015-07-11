@@ -31,17 +31,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AsyncIO">
-      <HintPath>packages\AsyncIO.0.1.17.0\lib\net40\AsyncIO.dll</HintPath>
+      <HintPath>..\packages\AsyncIO.0.1.17.0\lib\net40\AsyncIO.dll</HintPath>
     </Reference>
     <Reference Include="NetMQ, Version=3.3.1.15040, Culture=neutral, PublicKeyToken=a6decef4ddc58b3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>packages\NetMQ.3.3.0.13-alpha594\lib\net40\NetMQ.dll</HintPath>
+      <HintPath>..\packages\NetMQ.3.3.0.13-alpha594\lib\net40\NetMQ.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\WindowsPowerShell\3.0\System.Management.Automation.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\WindowsPowerShell\3.0\System.Management.Automation.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -51,22 +51,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Envelope.cs" />
-    <Compile Include="PubSubProxy.cs" />
+    <Compile Include="ZeroMqHub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Build.ps1" />
+    <None Include="Get-Version.ps1" />
     <None Include="LICENSE" />
+    <None Include="Package.ps1" />
     <None Include="README.md" />
+    <None Include="Setup.ps1" />
+    <None Include="Test.ps1" />
     <None Include="src\PowerBot.psd1" />
     <None Include="src\Adapters\SlackAdapter.psm1" />
     <None Include="src\Adapters\IrcAdapter.psm1" />
-    <None Include="packages.config" />
     <None Include="src\PowerBot.psm1" />
     <None Include="src\PowerBotMQ.psm1" />
     <None Include="src\Adapters\TheBrain.psm1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="BotHooks\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

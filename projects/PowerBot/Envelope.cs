@@ -14,6 +14,9 @@ namespace PoshCode
         public string User { get; set; }
         // This is the message type (Message, Action, Reply, ???)
         public MessageType Type { get; set; }
+        // This indicates whether the user is an authenticated user
+        public bool Authenticated { get; set; }
+        // This is the actual content of the envelope :)
         public string[] Message { get; set; }
     }
 
