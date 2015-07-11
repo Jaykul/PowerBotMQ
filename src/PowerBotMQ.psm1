@@ -135,11 +135,12 @@ function Receive-Message {
 	}
 }
 
-function Start-BridgeJob {
+function Start-ZeroMqHub {
     [CmdletBinding()]
     param($Name="PubSubProxy")
-    Write-Verbose "[PoshCode.PubSubProxy]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)"
-    $Proxy = [PoshCode.PubSubProxy]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)
+    Write-Verbose "[PoshCode.ZeroMqHub]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)"
+    $Proxy = [PoshCode.ZeroMqHub]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)
+    # $Proxy.Name = "PubSubProxy"
     $Proxy.Start()
 
     if ($Proxy) {
@@ -153,4 +154,4 @@ if(!(Test-Path Variable:Script:PowerBotContext) ){
 }
 
 
-Export-ModuleMember -Function Register-Receiver, Register-Sender, Send-Message, Receive-Message, Start-BridgeJob
+Export-ModuleMember -Function Register-Receiver, Register-Sender, Send-Message, Receive-Message, Start-ZeroMqHub
