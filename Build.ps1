@@ -32,19 +32,22 @@ if(Test-Path $ReleasePath) {
 
 ## Find dependency Package Files
 Write-Verbose "       Copying Packages"
-foreach($Package in ([xml](Get-Content (Join-Path $Path packages.config))).packages.package) {
-    $folder = Join-Path $Path "packages\$($Package.id)*"
-    # Check for each TargetFramework, in order of preference, fall back to using the lib folder
-    $targets = ($TargetFramework -replace '^','lib\') + 'lib' | ForEach-Object { Join-Path $folder $_ }
-    $PackageSource = Get-Item $targets -ErrorAction SilentlyContinue | Select -First 1 -Expand FullName
-    if(!$PackageSource) {
-        throw "Could not find a lib folder for $($Package.id) from package. You may need to run Setup.ps1"
-    }
+$Packages = Join-Path $Path packages.config
+if(Test-Path $Packages) {
+    foreach($Package in ([xml](Get-Content $Packages)).packages.package) {
+        $folder = Join-Path $Path "packages\$($Package.id)*"
+        # Check for each TargetFramework, in order of preference, fall back to using the lib folder
+        $targets = ($TargetFramework -replace '^','lib\') + 'lib' | ForEach-Object { Join-Path $folder $_ }
+        $PackageSource = Get-Item $targets -ErrorAction SilentlyContinue | Select -First 1 -Expand FullName
+        if(!$PackageSource) {
+            throw "Could not find a lib folder for $($Package.id) from package. You may need to run Setup.ps1"
+        }
 
-    Write-Verbose "COPY   $PackageSource\"
-    $null = robocopy $PackageSource $ReleasePath\lib /MIR /NP /LOG:"$OutputPath\build.log" /R:2 /W:15
-    if($LASTEXITCODE -gt 1) {
-        throw "Failed to copy Package $($Package.id) (${LASTEXITCODE}), see build.log for details"
+        Write-Verbose "COPY   $PackageSource\"
+        $null = robocopy $PackageSource $ReleasePath\lib /MIR /NP /LOG:"$OutputPath\build.log" /R:2 /W:15
+        if($LASTEXITCODE -gt 1) {
+            throw "Failed to copy Package $($Package.id) (${LASTEXITCODE}), see build.log for details"
+        }
     }
 }
 
