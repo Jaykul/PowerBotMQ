@@ -1,0 +1,6 @@
+[submodule "SmartIrc4net"]
+	path = projects/SmartIrc4net
+	url = https://github.com/Jaykul/SmartIrc4net.git
+[submodule "SlackAPI"]
+	path = projects/SlackAPI
+	url = https://github.com/Jaykul/SlackAPI.git
