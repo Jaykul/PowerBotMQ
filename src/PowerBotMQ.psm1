@@ -19,9 +19,9 @@ if(!$global:PowerBotScriptRoot) {
     $global:PowerBotScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 }
 
-$AsyncIO = (Join-Path $PowerBotScriptRoot "..\lib\AsyncIO.dll")
-$NetMQ = (Join-Path $PowerBotScriptRoot "..\lib\NetMQ.dll")
-$PowerBot = (Join-Path $PowerBotScriptRoot "..\lib\PowerBot.dll")
+$NetMQ    = Join-Path $PowerBotScriptRoot "lib\NetMQ.dll"
+$AsyncIO  = Join-Path $PowerBotScriptRoot "lib\AsyncIO.dll"
+$PowerBot = Join-Path $PowerBotScriptRoot "lib\PowerBot.dll"
 
 Add-Type -Path $NetMQ, $AsyncIO, $PowerBot
 
@@ -29,14 +29,20 @@ $PowerBotBridgePublisher   = "tcp://127.0.0.1:50005"
 $PowerBotBridgeSubscriber  = "tcp://127.0.0.1:50015"
 
 function Register-Receiver {
+	#.Synopsis
+	#	Register a Receiver to the PowerBot Bridge
+	#.Example
+	#	Register-Receiver "PowerShell"
+	#	Registers a receiver for PowerShell messages
 	[CmdletBinding()]
 	param(
+		# The Context filter for this receiver, e.g. a channel name that's common across networks
 		[Parameter(Mandatory=$false)]
 		[AllowEmptyString()]
 		[string]$Filter=""
 	)
 	# Connect our subscriber to the bridge publisher
-	Write-Verbose "Connecting Subscriber to $PowerBotBridgePublisher"
+	Write-Verbose "Connecting a subscriber to $PowerBotBridgePublisher"
 	$script:Receiver = $PowerBotContext.CreateSubscriberSocket()
 	$script:Receiver.Connect($PowerBotBridgePublisher);
 	Write-Verbose "Subscribing with filter $Filter"
@@ -44,6 +50,8 @@ function Register-Receiver {
 }
 
 function Register-Sender {
+	#.Synopsis
+	#	Register a Sender to the PowerBot Bridge
 	[CmdletBinding()]
 	param()
 	# Connect our publisher to the bridge subscriber
@@ -53,23 +61,33 @@ function Register-Sender {
 }
 
 function Send-Message {
+	#.Synopsis
+	#	Send a message to the PowerBot Bridge
+	#.Example
+	#   Send-Message -Context $Context -Channel $Channel -Network $Network -User $User -Message "Hello World"
 	[CmdletBinding()]
 	param(
+		# The Message Type
 		[PoshCode.MessageType]
 		$Type = [PoshCode.MessageType]::Message,
-	
+
+		# The Context for the message (a channel name that's common across networks)
 		[Parameter(Mandatory=$true, Position=0)]
 		$Context,
-	
+
+		# The Channel the message came from
 		[Parameter(Mandatory=$true, Position=1)]
 		$ChannelFrom,
-	
+
+		# The Network the message came from (defaults to "Robot")
 		[Parameter(Position=2)]
 		$NetworkFrom = "Robot",
 
+		# The User the message came from (defaults to the bot name)
 		[Parameter(Position=3)]
-		$UserFrom = $Script:PowerBotName,
+		$UserFrom = "PowerBot",
 
+		# The message
 		[Parameter(Mandatory=$true, Position=4, ValueFromPipelineByPropertyName=$true, ValueFromPipeline=$true, ValueFromRemainingArguments=$true)]
 		[string[]]$Message
 	)
@@ -97,24 +115,32 @@ function Send-Message {
 }
 
 function Receive-Message {
+	#.Synopsis
+	#	Receive a message (if there is one) from the PowerBot Bridge
 	[CmdletBinding()]
+	[OutputType([PoshCode.Envelope])]
 	param(
+		# Exclusion filter for channels (normally you pass your own channel)
 		[String]$NotFromChannel = "",
+
+		# Exclusion filter for networks (normally you pass your own network)
 		[String]$NotFromNetwork = "",
-	
+
+		# Timeout (defaults to 10,000: 10 seconds)
+		# If no message comes within this time, the cmdlet returns without output
 		[Parameter(Mandatory=$false)]
 		[int]$TimeoutMilliSeconds = 10000
 	)
 	begin {
 		if(!(Test-Path Variable:Script:Receiver)) {
             $exception = New-Object System.InvalidOperationException "No Receiver registered. You must call Register-Receiver!"
-            $errorRecord = New-Object System.Management.Automation.ErrorRecord $exception, "ReceiverNotSubscribed", "InvalidOperation", $ExceptionObject    
+            $errorRecord = New-Object System.Management.Automation.ErrorRecord $exception, "ReceiverNotSubscribed", "InvalidOperation", $ExceptionObject
             $PSCmdlet.ThrowTerminatingError($errorRecord)
         }
 	}
 	end {
 		$Message = New-Object System.Collections.Generic.List[String] 6
-		if([NetMQ.ReceivingSocketExtensions]::TryReceiveMultipartStrings(	$script:Receiver, 
+		if([NetMQ.ReceivingSocketExtensions]::TryReceiveMultipartStrings(	$script:Receiver,
 			[TimeSpan]::FromMilliseconds($TimeoutMilliSeconds),
 			[System.Text.Encoding]::UTF8,
 			[ref]$Message,
@@ -136,8 +162,14 @@ function Receive-Message {
 }
 
 function Start-ZeroMqHub {
+	#.Synopsis
+	# 	Start the PowerBot Bridge PoshCode.ZeroMqHub as a job
     [CmdletBinding()]
-    param($Name="PubSubProxy")
+	[OutputType([PoshCode.ZeroMqHub])]
+    param(
+		# The name of this bridge (currently ignored)
+		$Name="PubSubProxy"
+	)
     Write-Verbose "[PoshCode.ZeroMqHub]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)"
     $Proxy = [PoshCode.ZeroMqHub]::new($PowerBotBridgePublisher, $PowerBotBridgeSubscriber, 10000)
     # $Proxy.Name = "PubSubProxy"

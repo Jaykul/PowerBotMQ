@@ -16,7 +16,7 @@ CompanyName = 'http://HuddledMasses.org'
 Copyright = '(c) 2014, Joel Bennett'
 
 # The version of this module.
-ModuleVersion = '4.0'
+ModuleVersion = '4.0.1'
 
 # A description of this module.
 Description = 'PowerBot: the PowerShell IRC Bot'
@@ -28,7 +28,7 @@ PowerShellVersion = '5.0'
 CLRVersion = '4.0'
 
 # Functions to export from this manifest.
-FunctionsToExport = 'Restart-Adapter','Start-ZeroMqHub'
+FunctionsToExport = 'Restart-Adapter','Start-ZeroMqHub','Get-PowerBotConfiguration','Set-PowerBotConfiguration'
 
 # Aliases to export from this manifest.
 # AliasesToExport = ''
@@ -40,7 +40,7 @@ FunctionsToExport = 'Restart-Adapter','Start-ZeroMqHub'
 #CmdletsToExport = ''
 
 # This is a list of other modules that must be loaded before this module.
-RequiredModules = @('Configuration','ResolveAlias')
+RequiredModules = @(@{ModuleName='Configuration';ModuleVersion='0.2'})
 NestedModules = 'PowerBotMQ.psm1'
 
 # The script files (.ps1) that are loaded before this module.
@@ -53,18 +53,12 @@ TypesToProcess = @()
 FormatsToProcess = @()
 
 FileList = @(
-   'PowerBot.psd1', 'PowerBot.psm1', 'ReadMe.md', 'UpdateCommands.ps1', 'LICENSE'
+   'PowerBot.psd1', 'PowerBot.psm1', 'PowerBotMQ.psm1', 'ReadMe.md', 'LICENSE'
 
-   'bin\Reference\JabbR.Client.dll', 'bin\Reference\log4net.dll', 'bin\Reference\Meebey.SmartIrc4net.dll', 
-   'bin\Reference\Microsoft.AspNet.SignalR.Client.dll', 'bin\Reference\Newtonsoft.Json.dll', 
-   'bin\Reference\ServiceStack.Common.dll', 'bin\Reference\ServiceStack.Interfaces.dll', 
-   'bin\Reference\ServiceStack.Text.dll', 'bin\Reference\StarkSoftProxy.dll', 
-
-   '.\bin\Release\PowerBot.dll', '.\bin\Release\NetMQ.dll', '.\bin\Release\AsyncIO.dll',
-
-   'BotHooks\BotHooks.psm1', 
-   'BotCommands\BotCommands.psd1', 'BotCommands\BotCommands.psm1',
-   'UserTracking\UserTracking.psm1', 'UserTracking\UserTracking.psd1'
+   'lib\PowerBot.dll','lib\NetMQ.dll','lib\AsyncIO.dll',
+   'lib\SlackAPI.dll',
+   'lib\log4net.dll','lib\Meebey.SmartIrc4net.dll','lib\Newtonsoft.Json.dll',
+   'lib\StarkSoftProxy.dll','lib\WebSocket4Net.dll'
 )
 
 # A list of assemblies that must be loaded before this module can work.
@@ -82,7 +76,7 @@ PrivateData = @{
    CommandPrefix = ">"
 
    Owner = "Jaykul!jaykul@geoshell/dev/Jaykul"
-   
+
    Hooks = @{
       "PowerBot\BotHooks" = @{
          "Expand-Url"      = "ChannelMessage"
@@ -117,7 +111,7 @@ PrivateData = @{
          "PowerBot\BotCommands" = "Get-Help"
       }
    }
-   
+
    #  ProxyServer = "www.mc.xerox.com"
    #  ProxyPort = "8000"
    #  ProxyUserName
