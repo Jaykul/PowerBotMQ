@@ -26,11 +26,26 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup />
   <ItemGroup>
+    <Folder Include="src\" />
+    <Folder Include="src\Adapters\" />
+    <Folder Include="Test\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Build.ps1" />
+    <Compile Include="Get-Version.ps1" />
+    <Compile Include="LICENSE" />
+    <Compile Include="Package.ps1" />
+    <Compile Include="README.md" />
+    <Compile Include="Setup.ps1" />
+    <Compile Include="src\Adapters\IrcAdapter.psm1" />
+    <Compile Include="src\Adapters\SlackAdapter.psm1" />
+    <Compile Include="src\Adapters\BrainAdapter.psm1" />
     <Compile Include="src\PowerBot.psd1" />
     <Compile Include="src\PowerBot.psm1" />
-    <Compile Include="Test\PowerBot.tests.ps1" />
+    <Compile Include="src\PowerBotMQ.psm1" />
+    <Compile Include="src\Configuration.psd1" />
+    <Compile Include="Test.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />

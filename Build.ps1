@@ -4,10 +4,10 @@ param(
     [string]$Path = $PSScriptRoot,
     [string]$ModuleName = $(Split-Path $Path -Leaf),
     # The target framework for .net (for packages), with fallback versions
-    # The default supports PS3:  "net40","net35","net20","net45"
+    # The default supports PS3+:  "net40","net35","net20","net45","net451","net452","net46","net461","net462"
     # To only support PS4, use:  "net45","net40","net35","net20"
     # To support PS2, you use:   "net35","net20"
-    [string[]]$TargetFramework = @("net40","net35","net20","net45"),
+    [string[]]$TargetFramework = @("net40","net35","net20","net45","net451","net452","net46","net461","net462"),
     [switch]$Monitor,
     [Nullable[int]]$RevisionNumber = ${Env:APPVEYOR_BUILD_NUMBER}
 )

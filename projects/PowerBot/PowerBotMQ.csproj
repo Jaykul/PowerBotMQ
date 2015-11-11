@@ -57,13 +57,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Build.ps1" />
-    <None Include="Get-Version.ps1" />
-    <None Include="LICENSE" />
-    <None Include="Package.ps1" />
-    <None Include="README.md" />
-    <None Include="Setup.ps1" />
-    <None Include="Test.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
