@@ -16,7 +16,7 @@ CompanyName = 'http://HuddledMasses.org'
 Copyright = '(c) 2014, Joel Bennett'
 
 # The version of this module.
-ModuleVersion = '4.0.1'
+ModuleVersion = '4.0.2'
 
 # A description of this module.
 Description = 'PowerBot: the PowerShell IRC Bot'
@@ -53,69 +53,36 @@ TypesToProcess = @()
 FormatsToProcess = @()
 
 FileList = @(
-   'PowerBot.psd1', 'PowerBot.psm1', 'PowerBotMQ.psm1', 'ReadMe.md', 'LICENSE'
+    'PowerBot.psd1', 'PowerBot.psm1', 'PowerBotMQ.psm1',
+    'Configuration.psd1', 'ReadMe.md', 'LICENSE',
+    'Adapters\BrainAdapter.psm1','Adapters\IrcAdapter.psm1','Adapters\SlackAdapter.psm1',
 
-   'lib\PowerBot.dll','lib\NetMQ.dll','lib\AsyncIO.dll',
-   'lib\SlackAPI.dll',
-   'lib\log4net.dll','lib\Meebey.SmartIrc4net.dll','lib\Newtonsoft.Json.dll',
-   'lib\StarkSoftProxy.dll','lib\WebSocket4Net.dll'
+    'lib\PowerBot.dll','lib\NetMQ.dll','lib\AsyncIO.dll',
+    'lib\SlackAPI.dll',
+    'lib\log4net.dll','lib\Meebey.SmartIrc4net.dll','lib\Newtonsoft.Json.dll',
+    'lib\StarkSoftProxy.dll','lib\WebSocket4Net.dll'
 )
 
 # A list of assemblies that must be loaded before this module can work.
 RequiredAssemblies = '.\lib\PowerBot.dll' # Meebey.SmartIrc4net, Version=0.4.5, Culture=neutral, PublicKeyToken=null
 
-# Module specific private data can be passed via this member.
 PrivateData = @{
-   # Nick = @('PowerBot')
-   # RealName = ''
-   # Password = ''
-   Server = "chat.freenode.net"
-   Port = 8001
-   Channels = @('#PowerBot')
+    # PSData is module packaging and gallery metadata embedded in PrivateData
+    # It's for the PowerShellGet module
+    # We had to do this because it's the only place we're allowed to extend the manifest
+    # https://connect.microsoft.com/PowerShell/feedback/details/421837
+    PSData = @{
+        # Keyword tags to help users find this module via navigations and search.
+        Tags = @('IRC','Slack','Bot','PowerBot')
 
-   CommandPrefix = ">"
+        # The web address of this module's project or support homepage.
+        ProjectUri = "https://github.com/Jaykul/PowerBot"
 
-   Owner = "Jaykul!jaykul@geoshell/dev/Jaykul"
+        # The web address of this module's license. Points to a page that's embeddable and linkable.
+        LicenseUri = "http://opensource.org/licenses/GPL-2.0"
 
-   Hooks = @{
-      "PowerBot\BotHooks" = @{
-         "Expand-Url"      = "ChannelMessage"
-         "Test-Language"   = "ChannelMessage"
-      }
-      "PowerBot\UserTracking" = @{
-         "Sync-Join"       = "Join"
-         "Sync-Part"       = "Part"
-         "Sync-NickChange" = "NickChange"
-         "Sync-LoggedIn"   = "LoggedIn"
-      }
-   }
-
-   # There are two mandatory roles: Guest and User
-   #     Guest is for unauthenticated users
-   #     User is the default for newly-created users
-   # Normally, all users get the "User" role (in addition to any other role)
-   # BEWARE: EVERYONE has access to the commands in Guest, no matter what.
-   #         You must ensure there's no overlap with commands from other roles
-   RolePermissions = @{
-      Owner    = @{
-         "PowerBot\UserTracking" = "Set-Role"
-      }
-      Admin    = @{
-         "Microsoft.PowerShell.Utility" = "New-Alias"
-      }
-      User     = @{
-         "Microsoft.PowerShell.Utility" = "Format-Wide", "Format-List", "Format-Table", "Select-Object", "Sort-Object", "Get-Random", "Out-String"
-      }
-      Guest    = @{
-         "PowerBot\UserTracking" = "Get-Role"
-         "PowerBot\BotCommands" = "Get-Help"
-      }
-   }
-
-   #  ProxyServer = "www.mc.xerox.com"
-   #  ProxyPort = "8000"
-   #  ProxyUserName
-   #  ProxyPassword
+        # Release notes for this particular version of the module
+        ReleaseNotes = "First public release (now with config)!"
+    }
 }
-
 }
