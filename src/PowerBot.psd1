@@ -10,7 +10,7 @@ GUID = '58d14559-327c-4be5-92d3-e7be1edf35dd'
 Author = 'Joel Bennett'
 
 # The company or vendor for this module.
-CompanyName = 'http://HuddledMasses.org'
+CompanyName = 'HuddledMasses.org'
 
 # The copyright statement for this module.
 Copyright = '(c) 2014, Joel Bennett'

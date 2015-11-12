@@ -185,5 +185,4 @@ if(!(Test-Path Variable:Script:PowerBotContext) ){
 	$Script:PowerBotContext = [NetMQ.NetMQContext]::Create()
 }
 
-
 Export-ModuleMember -Function Register-Receiver, Register-Sender, Send-Message, Receive-Message, Start-ZeroMqHub

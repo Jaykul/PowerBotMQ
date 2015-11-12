@@ -1,4 +1,3 @@
-Start-ZeroMqHub -Verbose
 $PowerBotAdapters = "$PSScriptRoot\Adapters"
 $PowerBotMQ = Resolve-Path $PSScriptRoot\PowerBotMQ.psm1
 
@@ -18,8 +17,8 @@ function Set-PowerBotConfiguration {
         $InputObject
     )
     process {
-        $Path = Get-StoragePath
-        $InputObject | Export-Configuration $Path
+        $Path = Join-Path (Get-StoragePath) "Configuration.psd1"
+        $InputObject | Export-Metadata $Path
     }
 }
 
@@ -77,6 +76,7 @@ function Restart-Adapter {
     }
 }
 
-Microsoft.PowerShell.Core\Register-ArgumentCompleter -Command Start-Adapter -Parameter AdapterName -ScriptBlock $GetAdapterNames
+Microsoft.PowerShell.Core\Register-ArgumentCompleter -Command Restart-Adapter -Parameter AdapterName -ScriptBlock $GetAdapterNames
 
-Restart-Adapter *
+Start-ZeroMqHub
+PowerBot\Restart-Adapter *
