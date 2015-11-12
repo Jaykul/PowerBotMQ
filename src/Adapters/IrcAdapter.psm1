@@ -15,18 +15,36 @@ function Send-Message {
         [Parameter(Position=1, ValueFromPipeline=$true)]
         [String]$Message,
 
+        [Parameter()]
+        [String]$From,
+        
         # How to send the message: Message, Reply, Topic, Action
         [PoshCode.MessageType]$Type = "Message"
     )
     process {
         Write-Verbose "Send-IrcMessage $Message"
 
-        if($Message.Contains("`n")) {
-            $Message.Trim().Split("`n") | Send-Message -To $To -Type $Type
-        } else {
-            $Message = $Message.Trim()
+        foreach($Line in $Message.Trim() -split "\s*[\r\n]+\s*" | Where { ![string]::IsNullOrEmpty($_) }) {
+            # Figure out how many characters we can put in our message
+            $MaxLength = 497 - $To.Length - $script:client.Who.Length
+            
+            [string]$msg = if($From) {
+                "<{0}>" -f ($From -replace "^(.)", "`$1$([char]0x200C)")
+            }
+            
+            foreach($word in $Line.Trim() -split " ") {
+                if($MaxLength -lt ($msg.Length + $word.Length)) {
+                    Write-Verbose "SendMessage( '$Type', '$To', '$Message' )"
+                    $script:client.SendMessage("$Type", $To, $msg.Trim())
+
+                    [string]$msg = if($From) {
+                        "<{0}>" -f ($From -replace "^(.)", "`$1$([char]0x200C)")
+                    }
+                }
+                $msg += " " + $word
+            }
             Write-Verbose "SendMessage( '$Type', '$To', '$Message' )"
-            $script:client.SendMessage("$Type", $To, $Message)
+            $script:client.SendMessage("$Type", $To, $msg.Trim())
         }
     }
 }
@@ -88,6 +106,14 @@ function InitializeAdapter {
             Write-Verbose "RfcJoin $Channel" -Verbose
             $script:client.RfcJoin( $Channel )
         } )
+
+        function OnWho {
+            Write-Verbose "WHO: $Context $($_.Nick)!$($_.Ident)@$($_.Host)"
+            $script:client | Add-Member NoteProperty Who "$($_.Nick)!$($_.Ident)@$($_.Host)"
+            $script:client.Remove_OnWho( {OnWho} )    
+        }
+        
+        $script:client.Add_OnWho( {OnWho} )
 
         ## FOR DEBUGGING: repeat every line as verbose output
         # $script:client.Add_OnReadLine( {Write-Verbose $_.Line} )
@@ -180,14 +206,49 @@ function Start-Adapter {
                     if($Envelope.Network -eq "Robot") {
                         IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message $Message
                     } else {
-                        IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message ("<{0}> {1}" -f ($envelope.User -replace "^(.)", "`$1$([char]0x200C)"), $Message)
+                        IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message $Message -From $envelope.User
                     }
                 }
             }
-
         }
         $Character = $Host.UI.RawUI.ReadKey().Character
     }
 }
 
 Export-ModuleMember -Function "Send-Message", "Start-Adapter"
+
+
+# A NOTE ABOUT MESSAGE LENGTH:
+   
+   #IRC max length is 512, minus the CR LF and other headers ... 
+   # In practice, it looks like this:
+   # :Nick!Ident@Host PRIVMSG #Powershell :Your Message Here
+   ###### The part that never changes is the 512-2 (for the \r\n) 
+   ###### And the "PRIVMSG" and extra spaces and colons
+   # So that inflexible part of the header is:
+   #     1 = ":".Length
+   #     9 = " PRIVMSG ".Length 
+   #     2 = " :".Length
+   # So therefore our hard-coded magic number is:
+   #     498 = 510 - 12
+   # (I take an extra one off for good luck: 510 - 13)
+   
+   # In a real world example with my host mask and "Shelly" as the nick and user id:
+     # Host     : geoshell/dev/Jaykul
+     # Ident    : ~Shelly
+     # Nick     : Shelly
+   # We calculate the mask in our OnWho:
+     # Mask     : Shelly!~Shelly@geoshell/dev/Jaykul
+   
+   # So if the "$Sender" is "#PowerShell" our header is:
+   #     57 = ":Shelly!~Shelly@geoshell/dev/Jaykul PRIVMSG #Powershell :".Length
+     # As we said before/, 12 is constant
+     #     12 = ":" + " PRIVMSG " + " :"
+     # And our Who.Mask ends up as:
+     #     34 = "Shelly!~Shelly@geoshell/dev/Jaykul".Length 
+     # And our Sender.Length is:
+     #     11 = "#Powershell".Length
+     # The resulting MaxLength would be 
+     #    452 = 497 - 11 - 34
+     # Which is one less than the real MaxLength:
+     #    453 = 512 - 2 - 57 
