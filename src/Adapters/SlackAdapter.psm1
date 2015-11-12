@@ -85,9 +85,16 @@ function InitializeAdapter {
 
             $Context = $Event.MessageData.Context
             $Network = $Event.MessageData.Network
+            
             Write-Debug "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $($Message.Text)"
             # Write-Debug $($Message | Format-List | Out-String)
-            PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -User $User -Message $Message.Text
+            
+            $Text = $Message.Text
+            # Strip the slack code delimiter backticks
+            $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
+            $Text = $Text -replace '```(.*)```',"  `$1  "
+            
+            PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -User $User -Message $Text
         } -MessageData @{
             Context = $Context
             Network = $Network.Host
