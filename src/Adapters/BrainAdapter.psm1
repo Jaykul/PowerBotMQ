@@ -89,7 +89,7 @@ function Start-Adapter {
     )
 
     if($Reactions.Count -eq 0) {
-        Initialize-Adapter
+        InitializeAdapter
     }
 
     $Reactions = Get-Reaction
@@ -117,7 +117,7 @@ function Start-Adapter {
     }
 }
 
-function Initialize-Adapter {
+function InitializeAdapter {
     #.Synopsis
     #   Initialize the adapter (mandatory adapter cmdlet)
     param()
