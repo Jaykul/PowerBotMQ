@@ -98,7 +98,7 @@ function InitializeAdapter {
                 $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
                 $Text = $Text -replace '```(.*)```',"  `$1  "
                 
-                PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -User $User -Message $Text
+                PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -DisplayName $User -AuthenticatedUser $Message.user -Message $Text
             }
         } -MessageData @{
             Channel = $Channel
