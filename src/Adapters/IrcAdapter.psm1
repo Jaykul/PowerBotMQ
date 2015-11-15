@@ -2,6 +2,9 @@
 using namespace System.Management.Automation
 Add-Type -Path "$PSScriptRoot\..\lib\Meebey.SmartIrc4net.dll"
 
+${AuthenticatedUsers} = @{}
+
+
 function Send-Message {
     #.Synopsis
     #  Sends a message to the IRC server
@@ -107,13 +110,15 @@ function InitializeAdapter {
             $script:client.RfcJoin( $Channel )
         } )
 
-        function OnWho {
-            Write-Verbose "WHO: $Context $($_.Nick)!$($_.Ident)@$($_.Host)"
-            $script:client | Add-Member NoteProperty Who "$($_.Nick)!$($_.Ident)@$($_.Host)"
-            $script:client.Remove_OnWho( {OnWho} )    
-        }
+        
+
+        
         
         $script:client.Add_OnWho( {OnWho} )
+        $script:client.Add_OnJoin( {OnJoin} )
+        $script:client.Add_OnPart( {OnPart} )
+        $script:client.Add_OnNickChange( {OnNickChange} )
+        $script:client.Add_OnLoggedIn( {OnLoggedIn} )
 
         ## FOR DEBUGGING: repeat every line as verbose output
         # $script:client.Add_OnReadLine( {Write-Verbose $_.Line} )
@@ -121,30 +126,44 @@ function InitializeAdapter {
         # We handle commands on query (private) messages or on channel messages
         # $script:client.Add_OnQueryMessage( {Write-Verbose "QUERY: $($_ | Fl * |Out-String)" } )
         $script:client.Add_OnChannelMessage( {
-            Write-Verbose "IRC1: $Context $($Network.Host)\$($_.Data.Channel) MESSAGE <$($_.Data.Nick)> $($_.Data.Message)"
-            PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -User $_.Data.Nick -Message $_.Data.Message
+            $Authenticated = ${AuthenticatedUsers}.($_.Data.Nick)
+            Write-Verbose "IRC1: $Context $($Network.Host)\$($_.Data.Channel) MESSAGE <$($_.Data.Nick)> $($_.Data.Message) (AUTH: $Authenticated)"
+            if(!$Authenticated) {
+                $script:client.rfcWhoIs($_.Data.Nick)
+            }
+        
+            PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -DisplayName $_.Data.Nick -AuthenticatedUser $Authenticated -Message $_.Data.Message
         } )
 
         $script:client.Add_OnChannelAction( {
             $Flag = [char][byte]1
             $Message = $_.Data.Message -replace "${Flag}ACTION (.*)${Flag}",'$1'
-            Write-Verbose "IRC1: $Context $($Network.Host)\$($_.Data.Channel) ACTION <$($_.Data.Nick)> $Message"
-            PowerBotMQ\Send-Message -Type "Action" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -User $_.Data.Nick -Message $Message
+            $Authenticated = ${AuthenticatedUsers}.($_.Data.Nick)
+            Write-Verbose "IRC1: $Context $($Network.Host)\$($_.Data.Channel) ACTION <$($_.Data.Nick)> $Message (AUTH: $Authenticated)"
+            if(!$Authenticated) {
+                $script:client.rfcWhoIs($_.Data.Nick)
+            }
+            
+            PowerBotMQ\Send-Message -Type "Action" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -DisplayName $_.Data.Nick -AuthenticatedUser $Authenticated -Message $Message
         } )
 
-        Unregister-Event -SourceIdentifier IrcHandler -ErrorAction SilentlyContinue
-        $null = Register-ObjectEvent $client OnChannelMessage -SourceIdentifier IrcHandler -Action {
-            $Client = $Event.SourceArgs[0]
-            $Data = $EventArgs.Data
-
-            $Context = $Event.MessageData.Context
-            $Network = $Event.MessageData.Network
-            Write-Verbose "IRC2: $Context $Host\$($Data.Channel) <$($Data.Nick)> $($Data.Message)"
-            PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $Channel -Network $Network -User $Data.Nick -Message $Data.Message
-        } -MessageData @{
-            Context = $Context
-            Network = "$($Network.Host)"
-        }
+        # Unregister-Event -SourceIdentifier IrcHandler -ErrorAction SilentlyContinue
+        # $null = Register-ObjectEvent $client OnChannelMessage -SourceIdentifier IrcHandler -Action {
+        #     $Client = $Event.SourceArgs[0]
+        #     $Data = $EventArgs.Data
+        #
+        #     $Context = $Event.MessageData.Context
+        #     $Network = $Event.MessageData.Network
+        #     Write-Verbose "IRC2: $Context $Host\$($Data.Channel) <$($Data.Nick)> $($Data.Message)"
+        #     $Authenticated = ${AuthenticatedUsers}.($_.Data.Nick)
+        #     if(!$Authenticated) {
+        #         $Client.rfcWhoIs($Data.Nick)
+        #     }            
+        #     PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $Channel -Network $Network -DisplayName $Data.Nick -Message -AuthenticatedUser $Authenticated -Message $Data.Message
+        # } -MessageData @{
+        #     Context = $Context
+        #     Network = "$($Network.Host)"
+        # }
 
         # Connect to the server
         $script:client.Connect($Network.Host, $Network.Port)
@@ -217,6 +236,55 @@ function Start-Adapter {
 
 Export-ModuleMember -Function "Send-Message", "Start-Adapter"
 
+
+
+
+
+function OnWho {
+    Write-Verbose "Who: $Context $($_.Nick)!$($_.Ident)@$($_.Host)"
+    # Write-Verbose $(($_ | Format-List | Out-String -Stream) -join "`n")
+    if($script:client.IsMe($_.Nick)) {
+        $script:client | Add-Member NoteProperty Who "$($_.Nick)!$($_.Ident)@$($_.Host)"
+        $script:client.Remove_OnWho( {OnWho} )
+    }    
+}
+
+function OnJoin {
+    param($Source, $EventArgs)
+    Write-Verbose ("Join: " + $Nick)
+    if($script:client.Nicknames -notcontains $Nick) {
+        $script:client.rfcWhoIs($Nick)
+    }
+}
+
+function OnPart {
+    param($Source, $EventArgs)
+    Write-Verbose ("Part: '" + $EventArgs.Who + "' just departed " + $EventArgs.Channel + "' saying '" + $EventArgs.PartMessage + "'")
+    if(${AuthenticatedUsers}.ContainsKey($Nick)) {
+        $null = ${AuthenticatedUsers}.Remove($Nick)
+    }
+}
+
+function OnNickChange {
+    param($Source, $EventArgs)
+    Write-Verbose ("Nick: '" + $EventArgs.OldNickname + "' is now '" + $EventArgs.NewNickname + "'")
+
+    if(${AuthenticatedUsers}.ContainsKey($EventArgs.OldNickname)) {
+        ${AuthenticatedUsers}.($EventArgs.NewNickname) = ${AuthenticatedUsers}.($EventArgs.OldNickname)
+        $null = ${AuthenticatedUsers}.Remove($EventArgs.OldNickname)
+    }
+}
+
+function OnLoggedIn {
+    # .Synopsis
+    #    Track the nicknames of logged-in users
+    # .Description
+    #    For dancer (the IRCD for FreeNode) 
+    #    As part of the WHOIS response, we get a Reply with ID 330
+    #    Which maps the nick to the account name it's logged in as
+    Write-Verbose ("'" + $_.Nick + "' is logged in as '"+ $_.Account + "'")
+    ${AuthenticatedUsers}.($_.Nick) = $_.Account
+}
 
 # A NOTE ABOUT MESSAGE LENGTH:
    
