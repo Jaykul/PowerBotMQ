@@ -11,11 +11,11 @@ namespace PoshCode
         // This is the channel name of the sender
         public string Channel { get; set; }
         // This is the user name of the sender
-        public string User { get; set; }
+        public string DisplayName { get; set; }
         // This is the message type (Message, Action, Reply, ???)
         public MessageType Type { get; set; }
         // This indicates whether the user is an authenticated user
-        public bool Authenticated { get; set; }
+        public string AuthenticatedUser { get; set; }
         // This is the actual content of the envelope :)
         public string[] Message { get; set; }
     }

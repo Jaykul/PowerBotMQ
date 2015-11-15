@@ -85,7 +85,13 @@ function Send-Message {
 
 		# The User the message came from (defaults to the bot name)
 		[Parameter(Position=3)]
-		$UserFrom = "PowerBot",
+		$DisplayName = "PowerBot",
+		
+		# A context\adapter unique persistent identifier for the user
+		# If an adapter can't guarantee this will be persistent, it should be blank
+		[Parameter()]
+		[AllowEmptyString()][AllowNull()]
+		$AuthenticatedUser = "",
 
 		# The message
 		[Parameter(Mandatory=$true, Position=4, ValueFromPipelineByPropertyName=$true, ValueFromPipeline=$true, ValueFromRemainingArguments=$true)]
@@ -104,7 +110,8 @@ function Send-Message {
 		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $Context, [System.Text.Encoding]::UTF8, $false, $true )
 		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $NetworkFrom, [System.Text.Encoding]::UTF8, $false, $true )
 		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $ChannelFrom, [System.Text.Encoding]::UTF8, $false, $true )
-		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $UserFrom, [System.Text.Encoding]::UTF8, $false, $true )
+		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $DisplayName, [System.Text.Encoding]::UTF8, $false, $true )
+		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $AuthenticatedUser, [System.Text.Encoding]::UTF8, $false, $true )
 		[NetMQ.OutgoingSocketExtensions]::Send( $script:Sender, $Type, [System.Text.Encoding]::UTF8, $false, $true )
 
 		for ($i = 0; $i -le $count; $i++) {
@@ -152,9 +159,10 @@ function Receive-Message {
 					Context = $Message[0]
 					Network = $Message[1]
 					Channel = $Message[2]
-					User = $Message[3]
-					Type = $Message[4]
-					Message = $Message | Select -Skip 5
+					DisplayName = $Message[3]
+					AuthenticatedUser = $Message[4]
+					Type = $Message[5]
+					Message = $Message | Select -Skip 6
 				}
 			}
 		}
