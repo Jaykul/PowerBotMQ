@@ -47,7 +47,7 @@ function InitializeAdapter {
 
         # The channels you want to connect to
         [Parameter(Mandatory)]
-        [string]$Channels,
+        [string]$Channel,
 
         # The credentials (if any) needed to connect
         [Parameter(Mandatory)]
@@ -74,28 +74,34 @@ function InitializeAdapter {
                 Write-Warning "Could not get channel from event, ignoring"
                 return
             }
-            $User = if($Client.UserLookup.ContainsKey($Message.user)) {
-                $Lookup = $Client.UserLookup[$Message.user]
-                if($Lookup.name) { $Lookup.name } else { $Lookup.id }
-            } else {
-                $Message.user
-            }
-            $MessageType = "Message"
-            if($Message.subtype -eq "me_message") { $MessageType = "Action" }
 
-            $Context = $Event.MessageData.Context
-            $Network = $Event.MessageData.Network
-            
-            Write-Debug "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $($Message.Text)"
-            # Write-Debug $($Message | Format-List | Out-String)
-            
-            $Text = $Message.Text
-            # Strip the slack code delimiter backticks
-            $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
-            $Text = $Text -replace '```(.*)```',"  `$1  "
-            
-            PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -User $User -Message $Text
+            # Slack bots get invited into channels ...
+            # Including channels we don't care about (or that are part of another "Context")
+            if($Event.MessageData.Channel -eq $Channel) {
+                $User = if($Client.UserLookup.ContainsKey($Message.user)) {
+                    $Lookup = $Client.UserLookup[$Message.user]
+                    if($Lookup.name) { $Lookup.name } else { $Lookup.id }
+                } else {
+                    $Message.user
+                }
+                $MessageType = "Message"
+                if($Message.subtype -eq "me_message") { $MessageType = "Action" }
+    
+                $Context = $Event.MessageData.Context
+                $Network = $Event.MessageData.Network
+                
+                Write-Debug "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $($Message.Text)"
+                # Write-Debug $($Message | Format-List | Out-String)
+
+                $Text = $Message.Text
+                # Strip the slack code delimiter backticks
+                $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
+                $Text = $Text -replace '```(.*)```',"  `$1  "
+                
+                PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -User $User -Message $Text
+            }
         } -MessageData @{
+            Channel = $Channel
             Context = $Context
             Network = $Network.Host
         }
