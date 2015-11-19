@@ -1,15 +1,29 @@
 [CmdletBinding()]
 param(
+    # Path of the folder to build from (defaults to the folder the Build script is in)
     [Alias("PSPath")]
     [string]$Path = $PSScriptRoot,
+    
+    # The Module name is used to identify Manifest and scrape version (defaults to the folder name)
     [string]$ModuleName = $(Split-Path $Path -Leaf),
+    
     # The target framework for .net (for packages), with fallback versions
     # The default supports PS3+:  "net40","net35","net20","net45","net451","net452","net46","net461","net462"
     # To only support PS4, use:  "net45","net40","net35","net20"
     # To support PS2, you use:   "net35","net20"
     [string[]]$TargetFramework = @("net40","net35","net20","net45","net451","net452","net46","net461","net462"),
+    
+    # Wait and re-run on changes
     [switch]$Monitor,
-    [Nullable[int]]$RevisionNumber = ${Env:APPVEYOR_BUILD_NUMBER}
+    
+    # The last digit of the build version number (by default comes from AppVeyor)
+    [Nullable[int]]$RevisionNumber = ${Env:APPVEYOR_BUILD_NUMBER},
+    
+    # MSBuild Target (defaults to "Build")
+    $Target="Build",
+    
+    # MSBuild Configuration (defaults to "Release")
+    $Configuration="Release"
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,7 +67,7 @@ if(Test-Path $Packages) {
 
 ## If there's a solution file, build it.
 foreach($solution in Get-Item $Path\*.sln) {
-    msbuild $solution.FullName /t:Build /p:Configuration=Release /p:OutputPath=$ReleasePath\lib
+    msbuild $solution.FullName /t:$Target /p:Configuration=$Configuration /p:OutputPath=$ReleasePath\lib
 }
 
 ## Copy PowerShell source Files
