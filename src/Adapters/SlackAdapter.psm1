@@ -62,7 +62,7 @@ function InitializeAdapter {
         while(!$client.IsReady) { Start-Sleep -Milliseconds 40 }
 
         Unregister-Event -SourceIdentifier SlackHandler -ErrorAction SilentlyContinue
-        $null = Register-ObjectEvent $client OnMessageReceived  -SourceIdentifier SlackHandler -Action {
+        $null = Register-ObjectEvent $client OnMessageReceived -SourceIdentifier SlackHandler -Action {
             $Client = $Event.SourceArgs[0]
             $Message = $EventArgs.Message
             if($Null -eq $Message.user -or $client.MySelf.id -eq $Message.user) {
@@ -148,7 +148,7 @@ function Start-Adapter {
             foreach($envelope in PowerBotMQ\Receive-Message -NotFromNetwork $Network.Host -NotFromChannel $Channel -TimeoutMilliSeconds 100) {
                 Write-Debug ($envelope.Network + " not ($($Network.Host)) " + $envelope.Channel + " not ($Channel) " + $envelope.Message )
                 foreach($Message in $envelope.Message) {
-                    SlackAdapter\Send-Message -To $Channel -From $envelope.User -Message $Message -Type $envelope.Type
+                    SlackAdapter\Send-Message -To $Channel -From $envelope.DisplayName -Message $Message -Type $envelope.Type
                 }
             }
         }

@@ -225,7 +225,7 @@ function Start-Adapter {
                     if($Envelope.Network -eq "Robot") {
                         IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message $Message
                     } else {
-                        IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message $Message -From $envelope.User
+                        IrcAdapter\Send-Message -To $Channel -Type $envelope.Type -Message $Message -From $envelope.DisplayName
                     }
                 }
             }
