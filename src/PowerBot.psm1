@@ -3,11 +3,11 @@ $PowerBotMQ = Resolve-Path $PSScriptRoot\PowerBotMQ.psm1
 
 $GetAdapterNames = { (Get-ChildItem $PowerBotAdapters -File -Filter *.psm1 | Select -Expand BaseName) -replace "Adapter$" }
 
-function Get-PowerBotConfiguration {
+function Get-BotConfig {
     Import-Configuration
 }
 
-function Set-PowerBotConfiguration {
+function Set-BotConfig {
     [CmdletBinding()]
     param(
         # Specifies the objects to export as metadata structures.
@@ -22,7 +22,7 @@ function Set-PowerBotConfiguration {
     }
 }
 
-function Restart-Adapter {
+function Restart-BotAdapter {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
     param(
         [Parameter(Mandatory=$true)]
@@ -76,7 +76,9 @@ function Restart-Adapter {
     }
 }
 
-Microsoft.PowerShell.Core\Register-ArgumentCompleter -Command Restart-Adapter -Parameter AdapterName -ScriptBlock $GetAdapterNames
+Microsoft.PowerShell.Core\Register-ArgumentCompleter -Command Restart-BotAdapter -Parameter AdapterName -ScriptBlock $GetAdapterNames
 
-Start-ZeroMqHub
-PowerBot\Restart-Adapter *
+function Start-PowerBot {
+    Start-ZeroMqHub
+    PowerBot\Restart-BotAdapter *
+}
