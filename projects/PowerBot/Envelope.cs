@@ -4,6 +4,10 @@ namespace PoshCode
 {
     public class Envelope : EventArgs
     {
+        public Envelope() {
+            Timestamp = DateTimeOffset.Now;
+        }
+        
         // This is the PubSub Subscription name (e.g.: for two bots on the same brain, use the same name)
         public string Context { get; set; }
         // This is the network name of the sender
@@ -16,6 +20,8 @@ namespace PoshCode
         public MessageType Type { get; set; }
         // This indicates whether the user is an authenticated user
         public string AuthenticatedUser { get; set; }
+        // Timestamp for the message
+        public DateTimeOffset Timestamp { get; set; }
         // This is the actual content of the envelope :)
         public string[] Message { get; set; }
     }
