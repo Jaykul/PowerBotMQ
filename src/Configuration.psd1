@@ -1,7 +1,14 @@
-@{    # PowerShell is the "Context"    PowerShell = @{        # Brain is the configuration for the AI part ...        # So far there's not much here        Brain = @{
+@{
+    # PowerShell is the "Context"
+    PowerShell = @{
+        # Brain is the configuration for the AI part ...
+        # So far there's not much here
+        Brain = @{
             Name = 'PowerBot'
+            Roles = @("Owner", "Admin", "User", "Guest")
         }
-        # Slack is the Adapter        Slack = @{
+        # Slack is the Adapter
+        Slack = @{
             # Get this from slack's integration page.
             # Create a "Hubot" and copy the API Token
             Token = 'xoxb-.....'

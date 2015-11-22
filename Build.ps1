@@ -81,7 +81,7 @@ if($LASTEXITCODE -ne 3) {
 Write-Verbose "       Update Module Version"
 $ReleaseManifest = Join-Path $ReleasePath "${ModuleName}.psd1"
 Set-Content $ReleaseManifest ((Get-Content $ReleaseManifest) -Replace "^(\s*)ModuleVersion\s*=\s*'?[\d\.]+'?\s*`$", "`$1ModuleVersion = '$Version'")
-
+Get-Module $ReleaseManifest -ListAvailable
 
 ## TODO: Use Grunt or write something native to handle this
 #        The robocopy solution has a resolution of 1 minute...

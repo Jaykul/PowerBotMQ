@@ -16,12 +16,12 @@ namespace PoshCode
         public string Channel { get; set; }
         // This is the user name of the sender
         public string DisplayName { get; set; }
-        // This is the message type (Message, Action, Reply, ???)
-        public MessageType Type { get; set; }
         // This indicates whether the user is an authenticated user
         public string AuthenticatedUser { get; set; }
         // Timestamp for the message
         public DateTimeOffset Timestamp { get; set; }
+        // This is the message type (Message, Action, Reply, ???)
+        public MessageType Type { get; set; }
         // This is the actual content of the envelope :)
         public string[] Message { get; set; }
     }

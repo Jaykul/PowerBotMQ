@@ -90,7 +90,7 @@ function InitializeAdapter {
                 $Context = $Event.MessageData.Context
                 $Network = $Event.MessageData.Network
                 
-                Write-Debug "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $($Message.Text)"
+                Write-Verbose "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $MessageType $($Message.Text)"
                 # Write-Debug $($Message | Format-List | Out-String)
 
                 $Text = $Message.Text
@@ -123,7 +123,7 @@ function Start-Adapter {
         [Uri]$Network,
 
         # The channels you want to connect to
-        [string]$Channel = $( $Network.Segments.Trim('/').Split(',',[StringSplitOptions]::RemoveEmptyEntries) | ? { $_ } ),
+        [string]$Channel = $( $Network.Segments.Trim('/').Split(',',[StringSplitOptions]::RemoveEmptyEntries) | Where { $_ } ),
 
         # The credentials (if any) needed to connect
         [String]$Token = $(if($Network.UserInfo){ $Network.UserInfo }),

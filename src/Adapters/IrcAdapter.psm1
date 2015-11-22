@@ -1,4 +1,9 @@
-﻿#requires -Module PowerBotMQ
+﻿## This script requires Meebey.SmartIrc4net.dll which you can get as part of SmartIrc4net
+## http://voxel.dl.sourceforge.net/sourceforge/smartirc4net/SmartIrc4net-0.4.0.bin.tar.bz2
+## And the docs are at http://smartirc4net.meebey.net/docs/0.4.0/html/
+############################################################################################
+
+#requires -Module PowerBotMQ
 using namespace System.Management.Automation
 Add-Type -Path "$PSScriptRoot\..\lib\Meebey.SmartIrc4net.dll"
 
@@ -175,7 +180,6 @@ function InitializeAdapter {
             $script:client.Login($nick, $realname, 0, $nick[0])
         }
 
-
         return $script:client
     }
 }
@@ -235,10 +239,6 @@ function Start-Adapter {
 }
 
 Export-ModuleMember -Function "Send-Message", "Start-Adapter"
-
-
-
-
 
 function OnWho {
     Write-Verbose "Who: $Context $($_.Nick)!$($_.Ident)@$($_.Host)"
