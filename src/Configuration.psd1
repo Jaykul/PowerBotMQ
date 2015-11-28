@@ -7,6 +7,33 @@
             Name = 'PowerBot'
             Roles = @("Owner", "Admin", "User", "Guest")
         }
+        Command = @{
+            Name = 'PowerBot'
+            CommandPrefix = '>'
+            RoleWhiteList = @{
+                Owner = @{
+                    "PowerBot\UserRoles" = "Add-Role","Remove-Role"
+                }
+                Admin = @{
+                    "Microsoft.PowerShell.Utility" = "New-Alias"
+                    "Compliment"="Update-Compliment","Remove-Compliment"
+                }
+                User  = @{
+                    "Bing"="*"
+                    "Math"="Invoke-MathEvaluator"
+                    "WebQueries"="*"
+                    "Strings"= "Join-String", "Split-String", "Replace-String", "Format-Csv"
+                    "FAQ"="*"
+                    "Compliment"="Get-Compliment","Add-Compliment"
+                    "CreditTracking"="*"
+                    "Microsoft.PowerShell.Utility" = "Format-Wide", "Format-List", "Format-Table", "Select-Object", "Sort-Object", "Get-Random", "Out-String"
+                }
+                Guest = @{
+                    "PowerBot\UserRoles" = "Get-Role"
+                    "PowerBot\BotCommands" = "Get-Help"
+                }
+            }
+        }
         # Slack is the Adapter
         Slack = @{
             # Get this from slack's integration page.
