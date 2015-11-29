@@ -10,7 +10,7 @@ if(!$global:BotStoragePath) {
 }
 
 ## If Jim Christopher's SQLite module is available, we'll use it
-Import-Module -Name SQLitePSProvider -ErrorAction SilentlyContinue
+Import-Module -Name SQLitePSProvider -Scope Global -ErrorAction SilentlyContinue
 if(!(Test-Path data:) -and (Microsoft.PowerShell.Core\Get-Command -Name Mount-SQLite)) {
     $BotDataFile = Join-Path $global:BotStoragePath "botdata.sqlite"
     Mount-SQLite -Name data -DataSource ${BotDataFile}

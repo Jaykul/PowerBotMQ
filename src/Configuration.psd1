@@ -12,7 +12,7 @@
             CommandPrefix = '>'
             RoleWhiteList = @{
                 Owner = @{
-                    "PowerBot\UserRoles" = "Add-Role","Remove-Role"
+                    "UserRoles" = "Add-Role","Remove-Role"
                 }
                 Admin = @{
                     "Microsoft.PowerShell.Utility" = "New-Alias"
@@ -29,8 +29,7 @@
                     "Microsoft.PowerShell.Utility" = "Format-Wide", "Format-List", "Format-Table", "Select-Object", "Sort-Object", "Get-Random", "Out-String"
                 }
                 Guest = @{
-                    "PowerBot\UserRoles" = "Get-Role"
-                    "PowerBot\BotCommands" = "Get-Help"
+                    "UserRoles" = "Get-Role"
                 }
             }
         }
