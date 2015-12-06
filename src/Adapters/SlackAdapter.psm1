@@ -91,9 +91,44 @@ function InitializeAdapter {
                 $Network = $Event.MessageData.Network
                 
                 Write-Verbose "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $MessageType $($Message.Text)"
-                # Write-Debug $($Message | Format-List | Out-String)
-
                 $Text = $Message.Text
+                
+                # Fix references to users or channels:
+                $Text = [regex]::Replace($Text, "<([\@\#\!])(\w+)(?:\|([^>]+))?>", 
+                { 
+                    param($match) 
+                    switch($match.Groups[1]) { 
+                        "@" {
+                            return "@" + $Script:Client.UserLookup[$match.Groups[2]].name
+                        }
+                        "#" {
+                            return "#" + $Script:Client.ChannelLookup[$match.Groups[2]].name
+                        }
+                        "!" {
+                            if("channel","group","everyone" -contains $match.Groups[2]) {
+                                return "@" + $match.Groups[2]
+                            }
+                        }
+                        default {
+                            return $match
+                        }
+                    }
+                })
+                
+                # Remove the weird markup for URLs
+                $Text = [regex]::Replace($Text, "<([^>\|]+)(?:\|([^>]+))?>", 
+                { 
+                    param($match)
+                    if($match.Groups[3]) { 
+                        #$match.Groups[2,1] -join " "
+                        $match.Groups[2]
+                    } else {
+                        $match.Groups[1]
+                    }
+                })     
+
+                # Decode HTML characters after we remove the references
+                $Text = [System.Net.WebUtility]::HtmlDecode($Text)                
                 # Strip the slack code delimiter backticks
                 $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
                 $Text = $Text -replace '```(.*)```',"  `$1  "
