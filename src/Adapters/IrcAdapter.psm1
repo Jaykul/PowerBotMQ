@@ -35,23 +35,21 @@ function Send-Message {
         foreach($Line in $Message.Trim() -split "\s*[\r\n]+\s*" | Where { ![string]::IsNullOrEmpty($_) }) {
             # Figure out how many characters we can put in our message
             $MaxLength = 497 - $To.Length - $script:client.Who.Length
-            
             [string]$msg = if($From) {
                 "<{0}>" -f ($From -replace "^(.)", "`$1$([char]0x200C)")
             }
-            
-            foreach($word in $Line.Trim() -split " ") {
-                if($MaxLength -lt ($msg.Length + $word.Length)) {
-                    Write-Verbose "SendMessage( '$Type', '$To', '$Message' )"
+            $words = $Line.Trim() -split " "
+            foreach($word in $words) {
+                if($MaxLength -le ($msg.Length + $word.Length)) {
+                    Write-Verbose "SendMessage: '$Type', '$To', '$msg' ($($msg.Length))"
                     $script:client.SendMessage("$Type", $To, $msg.Trim())
-
                     [string]$msg = if($From) {
                         "<{0}>" -f ($From -replace "^(.)", "`$1$([char]0x200C)")
                     }
                 }
                 $msg += " " + $word
             }
-            Write-Verbose "SendMessage( '$Type', '$To', '$Message' )"
+            Write-Verbose "SendMessage: '$Type', '$To', '$msg' ($($msg.Length))"
             $script:client.SendMessage("$Type", $To, $msg.Trim())
         }
     }
@@ -115,10 +113,6 @@ function InitializeAdapter {
             $script:client.RfcJoin( $Channel )
         } )
 
-        
-
-        
-        
         $script:client.Add_OnWho( {OnWho} )
         $script:client.Add_OnJoin( {OnJoin} )
         $script:client.Add_OnPart( {OnPart} )
@@ -299,7 +293,7 @@ function OnLoggedIn {
    #     2 = " :".Length
    # So therefore our hard-coded magic number is:
    #     498 = 510 - 12
-   # (I take an extra one off for good luck: 510 - 13)
+   # (I take an extra one off for good luck: 497 = 510 - 13)
    
    # In a real world example with my host mask and "Shelly" as the nick and user id:
      # Host     : geoshell/dev/Jaykul
@@ -309,14 +303,12 @@ function OnLoggedIn {
      # Mask     : Shelly!~Shelly@geoshell/dev/Jaykul
    
    # So if the "$Sender" is "#PowerShell" our header is:
-   #     57 = ":Shelly!~Shelly@geoshell/dev/Jaykul PRIVMSG #Powershell :".Length
+   #     57 = ":PowerBot!~Jaykul@geoshell/dev/Jaykul PRIVMSG #Powershell :".Length
      # As we said before/, 12 is constant
      #     12 = ":" + " PRIVMSG " + " :"
      # And our Who.Mask ends up as:
-     #     34 = "Shelly!~Shelly@geoshell/dev/Jaykul".Length 
+     #     36 = "PowerBot!~Jaykul@geoshell/dev/Jaykul".Length 
      # And our Sender.Length is:
      #     11 = "#Powershell".Length
-     # The resulting MaxLength would be 
-     #    452 = 497 - 11 - 34
-     # Which is one less than the real MaxLength:
-     #    453 = 512 - 2 - 57 
+     # The resulting MaxLength would be (one less than the real MaxLength): 
+     #    450 = 497 - 11 - 36
