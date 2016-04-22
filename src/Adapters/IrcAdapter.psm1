@@ -25,7 +25,7 @@ function Send-Message {
 
         [Parameter()]
         [String]$From,
-        
+
         # How to send the message: Message, Reply, Topic, Action
         [PoshCode.MessageType]$Type = "Message"
     )
@@ -130,7 +130,7 @@ function InitializeAdapter {
             if(!$Authenticated) {
                 $script:client.rfcWhoIs($_.Data.Nick)
             }
-        
+
             PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -DisplayName $_.Data.Nick -AuthenticatedUser $Authenticated -Message $_.Data.Message
         } )
 
@@ -142,7 +142,7 @@ function InitializeAdapter {
             if(!$Authenticated) {
                 $script:client.rfcWhoIs($_.Data.Nick)
             }
-            
+
             PowerBotMQ\Send-Message -Type "Action" -Context $Context -Channel $_.Data.Channel -Network "$($Network.Host)" -DisplayName $_.Data.Nick -AuthenticatedUser $Authenticated -Message $Message
         } )
 
@@ -157,7 +157,7 @@ function InitializeAdapter {
         #     $Authenticated = ${AuthenticatedUsers}.($_.Data.Nick)
         #     if(!$Authenticated) {
         #         $Client.rfcWhoIs($Data.Nick)
-        #     }            
+        #     }
         #     PowerBotMQ\Send-Message -Type "Message" -Context $Context -Channel $Channel -Network $Network -DisplayName $Data.Nick -Message -AuthenticatedUser $Authenticated -Message $Data.Message
         # } -MessageData @{
         #     Context = $Context
@@ -240,7 +240,7 @@ function OnWho {
     if($script:client.IsMe($_.Nick)) {
         $script:client | Add-Member NoteProperty Who "$($_.Nick)!$($_.Ident)@$($_.Host)"
         $script:client.Remove_OnWho( {OnWho} )
-    }    
+    }
 }
 
 function OnJoin {
@@ -261,6 +261,11 @@ function OnPart {
 
 function OnNickChange {
     param($Source, $EventArgs)
+    if(!$EventArgs.OldNickname) {
+        Write-Warning "Unknown NickChange?"
+        ($EventArgs | Format-List * -Force | Out-String -Stream) -join " " | Write-Warning
+        return
+    }
     Write-Verbose ("Nick: '" + $EventArgs.OldNickname + "' is now '" + $EventArgs.NewNickname + "'")
 
     if(${AuthenticatedUsers}.ContainsKey($EventArgs.OldNickname)) {
@@ -273,7 +278,7 @@ function OnLoggedIn {
     # .Synopsis
     #    Track the nicknames of logged-in users
     # .Description
-    #    For dancer (the IRCD for FreeNode) 
+    #    For dancer (the IRCD for FreeNode)
     #    As part of the WHOIS response, we get a Reply with ID 330
     #    Which maps the nick to the account name it's logged in as
     Write-Verbose ("'" + $_.Nick + "' is logged in as '"+ $_.Account + "'")
@@ -281,34 +286,34 @@ function OnLoggedIn {
 }
 
 # A NOTE ABOUT MESSAGE LENGTH:
-   
-   #IRC max length is 512, minus the CR LF and other headers ... 
+
+   #IRC max length is 512, minus the CR LF and other headers ...
    # In practice, it looks like this:
    # :Nick!Ident@Host PRIVMSG #Powershell :Your Message Here
-   ###### The part that never changes is the 512-2 (for the \r\n) 
+   ###### The part that never changes is the 512-2 (for the \r\n)
    ###### And the "PRIVMSG" and extra spaces and colons
    # So that inflexible part of the header is:
    #     1 = ":".Length
-   #     9 = " PRIVMSG ".Length 
+   #     9 = " PRIVMSG ".Length
    #     2 = " :".Length
    # So therefore our hard-coded magic number is:
    #     498 = 510 - 12
    # (I take an extra one off for good luck: 497 = 510 - 13)
-   
+
    # In a real world example with my host mask and "Shelly" as the nick and user id:
      # Host     : geoshell/dev/Jaykul
      # Ident    : ~Shelly
      # Nick     : Shelly
    # We calculate the mask in our OnWho:
      # Mask     : Shelly!~Shelly@geoshell/dev/Jaykul
-   
+
    # So if the "$Sender" is "#PowerShell" our header is:
    #     57 = ":PowerBot!~Jaykul@geoshell/dev/Jaykul PRIVMSG #Powershell :".Length
      # As we said before/, 12 is constant
      #     12 = ":" + " PRIVMSG " + " :"
      # And our Who.Mask ends up as:
-     #     36 = "PowerBot!~Jaykul@geoshell/dev/Jaykul".Length 
+     #     36 = "PowerBot!~Jaykul@geoshell/dev/Jaykul".Length
      # And our Sender.Length is:
      #     11 = "#Powershell".Length
-     # The resulting MaxLength would be (one less than the real MaxLength): 
+     # The resulting MaxLength would be (one less than the real MaxLength):
      #    450 = 497 - 11 - 36

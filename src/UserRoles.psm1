@@ -1,18 +1,18 @@
 # source the ThrowError function instead of using `throw`
 . "$PSScriptRoot\ThrowError.ps1"
 
-if(!$global:BotStoragePath) {
+if(!$global:PowerBotStoragePath) {
     trap { 
-        [string]$global:BotStoragePath = Join-Path $PowerBotScriptRoot "Data"
+        [string]$global:PowerBotStoragePath = Join-Path $PowerBotScriptRoot "Data"
         continue
     }
-    [string]$global:BotStoragePath = Get-StoragePath -CompanyName "HuddledMasses.org" -Name "PowerBot"
+    [string]$global:PowerBotStoragePath = Get-StoragePath -CompanyName "HuddledMasses.org" -Name "PowerBot"
 }
 
 ## If Jim Christopher's SQLite module is available, we'll use it
 Import-Module -Name SQLitePSProvider -Scope Global -ErrorAction SilentlyContinue
 if(!(Test-Path data:) -and (Microsoft.PowerShell.Core\Get-Command -Name Mount-SQLite)) {
-    $BotDataFile = Join-Path $global:BotStoragePath "botdata.sqlite"
+    $BotDataFile = Join-Path $global:PowerBotStoragePath "botdata.sqlite"
     Mount-SQLite -Name data -DataSource ${BotDataFile}
 } elseif(!(Test-Path data:)) {
     Write-Warning "No data drive, UserTracking and Roles disabled"

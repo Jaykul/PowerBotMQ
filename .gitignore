@@ -11,3 +11,4 @@
 *.sqlite
 bin/
 obj/
+projects/

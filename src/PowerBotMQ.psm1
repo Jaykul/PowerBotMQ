@@ -11,14 +11,14 @@ if(!$global:PowerBotScriptRoot) {
     $global:PowerBotScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 }
 
-if(!$global:BotStoragePath) {
+if(!$global:PowerBotStoragePath) {
     trap { 
-        [string]$global:BotStoragePath = Join-Path $PowerBotScriptRoot "Data"
+        [string]$global:PowerBotStoragePath = Join-Path $PowerBotScriptRoot "Data"
         continue
     }
-    [string]$global:BotStoragePath = Get-StoragePath -CompanyName "HuddledMasses.org" -Name "PowerBot"
+    [string]$global:PowerBotStoragePath = Get-StoragePath -CompanyName "HuddledMasses.org" -Name "PowerBot"
 }
-[string]$script:LogFolder = Join-Path $global:BotStoragePath Logs
+[string]$script:LogFolder = Join-Path $global:PowerBotStoragePath Logs
 if(!(Test-Path $script:LogFolder)) {
     $script:LogFolder = mkdir $script:LogFolder -force
 }    

@@ -46,7 +46,7 @@ function Restart-BotAdapter {
             foreach($Adapter in $Configuration.$Context.Keys) {
                 foreach($FilterName in $Name) {
                     if(("${Context}-${Adapter}" -like $FilterName) -or ($FilterName -notmatch "-" -and "$Adapter" -like "${FilterName}")) {
-                        foreach($AdapterFile in Get-ChildItem (Join-Path $PSScriptRoot\Adapters "${Adapter}Adapter.psm1")) {
+                        foreach($AdapterFile in Get-ChildItem (Join-Path $PSScriptRoot\Adapters "${Adapter}Adapter.ps[dm]1") | Select-Object -First 1) {
                             Write-Verbose "Restarting ${Context}-${Adapter} from $AdapterFile"
 
                             if($Job = Get-Job "${Context}-${Adapter}" -ErrorAction Ignore) {
@@ -65,9 +65,9 @@ function Restart-BotAdapter {
 
                             Start-Job -Name "${Context}-${Adapter}" -ScriptBlock {
                                 param($PSModulePath, $Context, $Config, $StoragePath, $Configuration, [Parameter(ValueFromRemainingArguments)][string[]]$Modules)
+                                $ErrorActionPreference = "Continue"
                                 $Env:PSModulePath = $PSModulePath
-                                $global:BotStoragePath = $StoragePath
-                                $global:BotConfig = $Configuration
+                                $global:PowerBotStoragePath = $StoragePath
                                 Import-Module $Modules
                                 Start-Adapter -Context $Context @Config -Verbose
                             } -ArgumentList $Env:PSModulePath, $Context, $Config, $StoragePath, $Configuration, $PowerBotMQ, $UserRoles, $AdapterFile.FullName
