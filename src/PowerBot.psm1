@@ -79,6 +79,64 @@ function Restart-BotAdapter {
     }
 }
 
+function Debug-Adapter {
+    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({
+            if(Get-ChildItem $PowerBotAdapters -File -Filter "${_}*.psm1") {
+                return $true
+            } else {
+                throw ("Invalid AdapterName. Valid names are " + (&$GetAdapterNames -join ", "))
+            }
+        })]
+        [string[]]$Name
+    )
+    begin {
+        $Configuration = Import-Configuration
+        $StoragePath = Get-StoragePath
+    }
+
+    process {
+        foreach($Context in $Configuration.Keys) {
+            foreach($Adapter in $Configuration.$Context.Keys) {
+                foreach($FilterName in $Name) {
+                    if(("${Context}-${Adapter}" -like $FilterName) -or ($FilterName -notmatch "-" -and "$Adapter" -like "${FilterName}")) {
+                        foreach($AdapterFile in Get-ChildItem (Join-Path $PSScriptRoot\Adapters "${Adapter}Adapter.ps[dm]1") | Select-Object -First 1) {
+                            Write-Verbose "Restarting ${Context}-${Adapter} from $AdapterFile"
+
+                            if($Job = Get-Job "${Context}-${Adapter}" -ErrorAction Ignore) {
+                                if($Job.State -notin "Stopped","Failed") {
+                                    if($PSCmdlet.ShouldProcess( "Stopped the Job '${Context}-${Adapter}'",
+                                                    "The '${Context}-${Adapter}' job is $($Job.State). Stop it?",
+                                                    "Starting ${Context}-${Adapter} job" )) {
+                                        $Job | Stop-Job
+                                    }
+                                }
+                            }
+
+                            $global:PowerBotStoragePath = $StoragePath
+                            $Config = $Configuration.$Context.$Adapter
+
+                            
+                            Write-Verbose "${Adapter}\Start-Adapter -Context $Context $($Config|Out-String)"
+
+                            Write-Verbose "Import-Module '$PowerBotMQ'"
+                            Import-Module $PowerBotMQ -Force -Global
+                            Write-Verbose "Import-Module '$UserRoles'"
+                            Import-Module $UserRoles -Force -Global
+                            Write-Verbose "Import-Module '$($AdapterFile.FullName)'"
+                            Import-Module $AdapterFile.FullName -Force -Global
+                            Start-Adapter -Context $Context @Config -Verbose
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 Microsoft.PowerShell.Core\Register-ArgumentCompleter -Command Restart-BotAdapter -Parameter AdapterName -ScriptBlock $GetAdapterNames
 
 function Start-PowerBot {

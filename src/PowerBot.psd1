@@ -28,7 +28,7 @@ PowerShellVersion = '5.0'
 CLRVersion = '4.0'
 
 # Functions to export from this manifest.
-FunctionsToExport = 'Start-PowerBot','Start-ZeroMqHub','Restart-BotAdapter','Get-BotConfig','Set-BotConfig'
+FunctionsToExport = 'Start-PowerBot','Start-ZeroMqHub','Restart-BotAdapter','Get-BotConfig','Set-BotConfig','Debug-Adapter'
 
 # Aliases to export from this manifest.
 # AliasesToExport = ''
