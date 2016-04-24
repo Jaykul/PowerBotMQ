@@ -1,85 +1,6 @@
 using namespace SlackApi
 using namespace SlackApi.WebSocketMessages
 
-class PowerSlack : SlackApi.SlackSocketClient {
-
-    PowerSlack($token) : base($token) {}
-
-    [void] Message([NewMessage]$Message) {
-        Write-Verbose "FROM SLACK: $($Message | Out-String)"
-        if($Null -eq $Message.user -or $this.MySelf.id -eq $Message.user) {
-            return
-        }
-
-        if($this.ChannelLookup.ContainsKey($Message.channel)) {
-            $FromChannel = $this.ChannelLookup[$Message.channel].name
-        } else {
-            Write-Warning "Could not get channel from event, ignoring"
-            return
-        }
-
-        # Slack bots get invited into channels ...
-        # Including channels we don't care about (or that are part of another "Context")
-        Write-Verbose "channel: $FromChannel -eq ${Script:Channel}"
-        if($Script:Channel -eq $FromChannel) {
-            $User = if($this.UserLookup.ContainsKey($Message.user)) {
-                $Lookup = $this.UserLookup[$Message.user]
-                if($Lookup.name) { $Lookup.name } else { $Lookup.id }
-            } else {
-                $Message.user
-            }
-            $MessageType = "Message"
-            if($Message.subtype -eq "me_message") { $MessageType = "Action" }
-
-            Write-Verbose "FROM SLACK: ${Script:Context} ${Script:Network}\${Script:Channel} <${User}|$($Message.user)> $MessageType $($Message.Text)"
-            $Text = $Message.Text
-
-            # Fix references to users or channels:
-            $Text = [regex]::Replace($Text, "<([\@\#\!])(\w+)(?:\|([^>]+))?>",
-            {
-                param($match)
-                switch($match.Groups[1]) {
-                    "@" {
-                        return "@" + $this.UserLookup[$match.Groups[2]].name
-                    }
-                    "#" {
-                        return "#" + $this.ChannelLookup[$match.Groups[2]].name
-                    }
-                    "!" {
-                        if("channel","group","everyone" -contains $match.Groups[2]) {
-                            return "@" + $match.Groups[2]
-                        }
-                    }
-                    default {
-                        return $match
-                    }
-                }
-            })
-
-            # Remove the weird markup for URLs
-            $Text = [regex]::Replace($Text, "<([^>\|]+)(?:\|([^>]+))?>",
-            {
-                param($match)
-                if($match.Groups[3]) {
-                    #$match.Groups[2,1] -join " "
-                    $match.Groups[2]
-                } else {
-                    $match.Groups[1]
-                }
-            })
-
-            # Decode HTML characters after we remove the references
-            $Text = [System.Net.WebUtility]::HtmlDecode($Text)
-            # Strip the slack code delimiter backticks
-            $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
-            $Text = $Text -replace '```(.*)```',"  `$1  "
-
-            Write-Verbose "Send-Message -Message $Text -Context ${Script:Context} -Network ${Script:Network} -Channel ${Script:Channel} -Displayname ${User} -AuthenticatedUser $($Message.user) -Type $MessageType"
-            PowerBotMQ\Send-Message -Type $MessageType -Context $Script:Context -Channel $Script:Channel -Network $Script:Network -DisplayName $User -AuthenticatedUser $Message.user -Message $Text
-        }
-    }
-}
-
 function Send-Message {
     #.Synopsis
     #  Sends a message to the IRC server
@@ -136,15 +57,89 @@ function InitializeAdapter {
         Register-Receiver $Context
         Write-Verbose "InitializeAdapter -Context $Context -Network $($Network.Host) -Channel $Channel -Token $Token"
 
-        $Script:Client = [PowerSlack]::new($Token)
+        $Script:Client = [SlackAPI.SlackEventClient]::new($Token)
         $client.Connect()
         while(!$client.IsReady) { Start-Sleep -Milliseconds 40 <# not magic #> }
 
-        # -MessageData @{
-        #     Channel = $Channel
-        #     Context = $Context
-        #     Network = $Network.Host
-        # }
+        Unregister-Event -SourceIdentifier SlackHandler -ErrorAction SilentlyContinue
+        $null = Register-ObjectEvent $client OnMessageReceived -SourceIdentifier SlackHandler -Action {
+            $Client = $Event.SourceArgs[0]
+            $Message = $EventArgs.Message
+            if($Null -eq $Message.user -or $client.MySelf.id -eq $Message.user) {
+                return
+            }
+            $Channel = if($Client.ChannelLookup.ContainsKey($Message.channel)) {
+                $Client.ChannelLookup[$Message.channel].name
+            } else {
+                Write-Warning "Could not get channel from event, ignoring"
+                return
+            }
+
+            # Slack bots get invited into channels ...
+            # Including channels we don't care about (or that are part of another "Context")
+            if($Event.MessageData.Channel -eq $Channel) {
+                $User = if($Client.UserLookup.ContainsKey($Message.user)) {
+                    $Lookup = $Client.UserLookup[$Message.user]
+                    if($Lookup.name) { $Lookup.name } else { $Lookup.id }
+                } else {
+                    $Message.user
+                }
+                $MessageType = "Message"
+                if($Message.subtype -eq "me_message") { $MessageType = "Action" }
+
+                $Context = $Event.MessageData.Context
+                $Network = $Event.MessageData.Network
+
+                Write-Verbose "FROM SLACK: $Context $Network\$Channel <${User}|$($Message.user)> $MessageType $($Message.Text)"
+                $Text = $Message.Text
+
+                # Fix references to users or channels:
+                $Text = [regex]::Replace($Text, "<([\@\#\!])(\w+)(?:\|([^>]+))?>",
+                {
+                    param($match)
+                    switch($match.Groups[1]) {
+                        "@" {
+                            return "@" + $Script:Client.UserLookup[$match.Groups[2]].name
+                        }
+                        "#" {
+                            return "#" + $Script:Client.ChannelLookup[$match.Groups[2]].name
+                        }
+                        "!" {
+                            if("channel","group","everyone" -contains $match.Groups[2]) {
+                                return "@" + $match.Groups[2]
+                            }
+                        }
+                        default {
+                            return $match
+                        }
+                    }
+                })
+
+                # Remove the weird markup for URLs
+                $Text = [regex]::Replace($Text, "<([^>\|]+)(?:\|([^>]+))?>",
+                {
+                    param($match)
+                    if($match.Groups[3]) {
+                        #$match.Groups[2,1] -join " "
+                        $match.Groups[2]
+                    } else {
+                        $match.Groups[1]
+                    }
+                })
+
+                # Decode HTML characters after we remove the references
+                $Text = [System.Net.WebUtility]::HtmlDecode($Text)
+                # Strip the slack code delimiter backticks
+                $Text = $Text -replace '[\r\n\s]*```[\r\n\s]*(.*)[\r\n\s]*```[\r\n\s]*',"`n`$1`n"
+                $Text = $Text -replace '```(.*)```',"  `$1  "
+
+                PowerBotMQ\Send-Message -Type $MessageType -Context $Context -Channel $Channel -Network $Network -DisplayName $User -AuthenticatedUser $Message.user -Message $Text
+            }
+        } -MessageData @{
+            Channel = $Channel
+            Context = $Context
+            Network = $Network.Host
+        }
         return $Script:Client
     }
 }
